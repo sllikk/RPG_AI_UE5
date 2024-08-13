@@ -87,5 +87,4 @@ private:
 
 	double flradius_sight;
 	double flradius_hearing;
-	bool blsMatchedSense;	
 };

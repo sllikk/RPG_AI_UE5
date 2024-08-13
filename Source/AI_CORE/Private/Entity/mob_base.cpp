@@ -7,6 +7,7 @@
 #include "Components/WidgetComponent.h"
 #include "Perception/AIPerceptionStimuliSourceComponent.h"
 #include "Perception/AISense_Damage.h"
+#include "Perception/AISense_Hearing.h"
 #include "Perception/AISense_Sight.h"
 #include "Perception/AISense_Team.h"
 
@@ -33,6 +34,7 @@ void Amob_base::PostInitializeComponents()
 		pPerceptionStimuliSourceComponent->RegisterForSense(UAISense_Sight::StaticClass());
 		pPerceptionStimuliSourceComponent->RegisterForSense(UAISense_Damage::StaticClass());
 		pPerceptionStimuliSourceComponent->RegisterForSense(UAISense_Team::StaticClass());
+		pPerceptionStimuliSourceComponent->RegisterForSense(UAISense_Hearing::StaticClass());
 	}
 }
 

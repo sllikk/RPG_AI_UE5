@@ -1,6 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "AI_CORE/Public/EntityBrain//base_controller_mobs.h"
+
+#include <iostream>
+
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Perception/AIPerceptionComponent.h"
@@ -11,7 +14,7 @@
 
 Abase_controller_mobs::Abase_controller_mobs(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer.Get()), pConfig_Sight(nullptr), pConfig_Damage(nullptr), pConfig_Team(nullptr),
-	  pBase_Mob(nullptr), TeamID(0), ReceiveLocation(FVector::ZeroVector), flradius_sight(1000), flradius_hearing(500), blsMatchedSense(false)
+	  pBase_Mob(nullptr), TargetActor(nullptr) ,TeamID(0), ReceiveLocation(FVector::ZeroVector), flradius_sight(1000), flradius_hearing(500)
 {
 	SetPerceptionComponent(*ObjectInitializer.CreateDefaultSubobject<UAIPerceptionComponent>(this, TEXT("MOBS_PERCEPTION")));
 
@@ -55,6 +58,7 @@ void Abase_controller_mobs::BeginPlay()
 {
 	Super::BeginPlay();
 
+	UAIPerceptionSystem::GetCurrent(GetWorld())->UpdateListener(*GetPerceptionComponent());
 }
 
 void Abase_controller_mobs::OnPossess(APawn* InPawn)
@@ -93,14 +97,13 @@ ETeamAttitude::Type Abase_controller_mobs::GetTeamAttitudeTowards(const AActor& 
 			{
 				return ETeamAttitude::Friendly;
 			}
+			// alliance teams
 			if (OtherTeamID == 10){
 
 				return ETeamAttitude::Neutral;
 			}
 		}
-
 	}
-
 	return ETeamAttitude::Hostile;
 
 }
@@ -112,9 +115,36 @@ FGenericTeamId Abase_controller_mobs::GetGenericTeamId() const
 
 void Abase_controller_mobs::UpdatePerception(const TArray<AActor*>& UpdateActors)
 {
-	for (const AActor* OtherActors : UpdateActors)
+	for (AActor* TargetActors : UpdateActors)
 	{
-		//FAIStimulus Stimulus;
+		FAIStimulus ActorStimulus;
+
+		if (CanSenseActors(TargetActors, ESenseConfig::SIGHT, ActorStimulus))
+		{
+			UE_LOG(LogAIPerception, Warning, TEXT("SIGHT"))
+			HandleSightActors(TargetActors);
+		}
+		else
+		{
+			UE_LOG(LogAIPerception, Warning, TEXT("SIGHT LOST"))
+			HandleSightLostActors(TargetActors);
+		}
+
+		if (CanSenseActors(TargetActors, ESenseConfig::HEARING, ActorStimulus))
+		{
+			UE_LOG(LogAIPerception, Warning, TEXT("HEARING"))
+			HandleHearingLocations(ActorStimulus.StimulusLocation);			
+		}
+
+		if (CanSenseActors(TargetActors, ESenseConfig::DAMAGE, ActorStimulus))
+		{
+			UE_LOG(LogAIPerception, Warning, TEXT("DAMAGE"))
+			HandleDamageActors(TargetActors);
+		}
+	}
+/*
+	
+#if UE_BUILD_DEBUG || UE_BUILD_DEVELOPMENT
 		ETeamAttitude::Type TeamAttitude = GetTeamAttitudeTowards(*OtherActors);	
 		FString strDebug;
 
@@ -122,18 +152,19 @@ void Abase_controller_mobs::UpdatePerception(const TArray<AActor*>& UpdateActors
 		{
 		case ETeamAttitude::Hostile:  
 			strDebug = TEXT("Hostile");
-		break;	
+			break;	
 		case ETeamAttitude::Friendly:	
-			strDebug = TEXT("Freindly");
-		break;
+			strDebug = TEXT("Friendly");
+			break;
 		case ETeamAttitude::Neutral:	
 			strDebug = TEXT("Neutral");
 			break;
-			default:
+		default:
 			break;
 		}
 		UE_LOG(LogAIPerception, Warning, TEXT("STIMULUS: %s, TEAM: %s"), *OtherActors->GetName(), *strDebug);
-	}
+#endif
+*/
 }
 
 bool Abase_controller_mobs::CanSenseActors(AActor* SenseActor, ESenseConfig SenseConfig, FAIStimulus& Stimulus)
@@ -144,39 +175,41 @@ bool Abase_controller_mobs::CanSenseActors(AActor* SenseActor, ESenseConfig Sens
 		for (const FAIStimulus& CurrentStimulus : ActorPerceptionBlueprintInfo.LastSensedStimuli)
 		{
 			TSubclassOf<UAISense> SensesClass = UAIPerceptionSystem::GetSenseClassForStimulus(GetWorld(), CurrentStimulus);
-			blsMatchedSense = false;
-			
+			bool blsMatchedSense = false;
+
 			if (SensesClass != nullptr)
 			{
 				switch (SenseConfig)
 				{
+				case ESenseConfig::NONE:	
+					break;
+
 				case ESenseConfig::SIGHT:
-					if (SensesClass == UAISense_Sight::StaticClass())
-					{
-						blsMatchedSense = true;
-					}	
-				break;
+				if (SensesClass == UAISense_Sight::StaticClass())
+				{
+					blsMatchedSense = true;
+				}	
+					break;
 				case ESenseConfig::HEARING:
-					if (SensesClass == UAISense_Sight::StaticClass())
+					if (SensesClass == UAISense_Hearing::StaticClass())
 					{
 						blsMatchedSense = true;
 					}	
 					break;
 				case ESenseConfig::DAMAGE:
-					if (SensesClass == UAISense_Sight::StaticClass())
+					if (SensesClass == UAISense_Damage::StaticClass())
 					{
 						blsMatchedSense = true;
 					}	
 					break;
 				case ESenseConfig::TEAM:
-					if (SensesClass == UAISense_Sight::StaticClass())
+					if (SensesClass == UAISense_Team::StaticClass())
 					{
 						blsMatchedSense = true;
 					}	
 					break;
 					default: UE_LOG(LogAIPerception, Error, TEXT("No Special Sense"))
 				}
-
 				if (blsMatchedSense)
 				{
 					Stimulus = CurrentStimulus;

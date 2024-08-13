@@ -6,8 +6,9 @@
 // for perception component
 enum class ESenseConfig : uint8
 {
-	SIGHT,
-	HEARING,
-	DAMAGE,
-	TEAM,
+	NONE = 0x01,
+	SIGHT = 0x02,
+	HEARING = 0x04,
+	DAMAGE = 0x08,
+	TEAM = 0x10,
 };
