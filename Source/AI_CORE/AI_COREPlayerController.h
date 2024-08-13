@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GenericTeamAgentInterface.h"
 #include "Templates/SubclassOf.h"
 #include "GameFramework/PlayerController.h"
 #include "AI_COREPlayerController.generated.h"
@@ -15,7 +16,7 @@ class UInputAction;
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 UCLASS()
-class AAI_COREPlayerController : public APlayerController
+class AAI_COREPlayerController : public APlayerController, public IGenericTeamAgentInterface
 {
 	GENERATED_BODY()
 
@@ -36,6 +37,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	UInputAction* SetDestinationClickAction;
 
+	virtual FGenericTeamId GetGenericTeamId() const override;
+	
 protected:
 
 	virtual void SetupInputComponent() override;
@@ -47,7 +50,14 @@ protected:
 	void OnSetDestinationTriggered();
 	void OnSetDestinationReleased();
 
+public:
+
+	
+	
 private:
+
+	FGenericTeamId TeamId;
+
 	FVector CachedDestination;
 	float FollowTime; // For how long it has been pressed
 };

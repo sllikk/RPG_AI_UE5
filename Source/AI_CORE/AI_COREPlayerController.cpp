@@ -15,17 +15,25 @@
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 AAI_COREPlayerController::AAI_COREPlayerController()
+: ShortPressThreshold(0), FXCursor(nullptr), DefaultMappingContext(nullptr), SetDestinationClickAction(nullptr)
 {
 	bShowMouseCursor = true;
 	DefaultMouseCursor = EMouseCursor::Type::Hand;
 	CachedDestination = FVector::ZeroVector;
 	FollowTime = 0.f;
+	TeamId = FGenericTeamId(5); 
+
 }
 
 void AAI_COREPlayerController::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
+}
+
+FGenericTeamId AAI_COREPlayerController::GetGenericTeamId() const
+{
+	return TeamId;
 }
 
 void AAI_COREPlayerController::SetupInputComponent()
@@ -98,6 +106,7 @@ void AAI_COREPlayerController::OnSetDestinationReleased()
 
 	FollowTime = 0.f;
 }
+
 
 
 

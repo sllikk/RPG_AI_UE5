@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GenericTeamAgentInterface.h"
 #include "GameFramework/Character.h"
 #include "AI_CORECharacter.generated.h"
 
@@ -10,6 +11,7 @@
 class UCameraComponent;
 class USpringArmComponent;
 class UNavigationInvokerComponent;
+class UAIPerceptionStimuliSourceComponent;
 
 UCLASS(Blueprintable)
 class AAI_CORECharacter : public ACharacter
@@ -22,20 +24,30 @@ class AAI_CORECharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	USpringArmComponent* pCameraBoom;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, Category = AI, meta = (AllowPrivateAccess = "true"))
 	UNavigationInvokerComponent* pNavigationInvokerComponent;
+
+	UPROPERTY(EditAnywhere, Category="AI", meta=(AllowPrivateAccess = "true"))
+	UAIPerceptionStimuliSourceComponent* pPerceptionStimuliSourceComponent;
 	
 public:
-	AAI_CORECharacter();
 
+	AAI_CORECharacter();
+	virtual void PostInitializeComponents() override;
+
+
+protected:
 	// Called every frame.
 	virtual void Tick(float DeltaSeconds) override;
+	virtual void BeginPlay() override;
+	
+public:
 
 	UCameraComponent* GetTopDownCameraComponent() const;
 	USpringArmComponent* GetCameraBoom() const;
-
+	
+	
 private:
-
 
 	
 };

@@ -5,13 +5,17 @@
 #include "NavigationInvokerComponent.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Camera/CameraComponent.h"
-#include "Components/DecalComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Materials/Material.h"
 #include "Engine/World.h"
+#include "Perception/AIPerceptionStimuliSourceComponent.h"
+#include "Perception/AISense_Damage.h"
+#include "Perception/AISense_Hearing.h"
+#include "Perception/AISense_Sight.h"
+#include "Perception/AISense_Team.h"
 
 AAI_CORECharacter::AAI_CORECharacter()
 {
@@ -44,15 +48,36 @@ AAI_CORECharacter::AAI_CORECharacter()
 
 	pNavigationInvokerComponent = CreateDefaultSubobject<UNavigationInvokerComponent>(TEXT("Player_NavInvoker"));
 	pNavigationInvokerComponent->SetGenerationRadii(4000.0f, 6000.0f);
+	pPerceptionStimuliSourceComponent = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("Player_PERCEPTION_STIMUL"));
 	
 	// Activate ticking in order to update the cursor every frame.
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
 
+}
 
+void AAI_CORECharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	if (pPerceptionStimuliSourceComponent->IsValidLowLevelFast())
+	{
+		pPerceptionStimuliSourceComponent->RegisterForSense(UAISense_Sight::StaticClass());
+		pPerceptionStimuliSourceComponent->RegisterForSense(UAISense_Damage::StaticClass());
+		pPerceptionStimuliSourceComponent->RegisterForSense(UAISense_Hearing::StaticClass());
+		pPerceptionStimuliSourceComponent->RegisterForSense(UAISense_Team::StaticClass());
+	}
+	
 }
 
 void AAI_CORECharacter::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
 }
+
+void AAI_CORECharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+}
+
