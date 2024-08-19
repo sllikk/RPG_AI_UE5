@@ -6,6 +6,7 @@
 #include "CoreMinimal.h"
 #include "AIController.h"
 #include "Entity/mob_base.h"
+#include "Navigation/CrowdAgentInterface.h"
 #include "Perception/AIPerceptionTypes.h"
 #include "base_controller_mobs.generated.h"
 
@@ -20,7 +21,7 @@ class UBehaviorTreeComponent;
 class UBlackboardComponent;
 
 UCLASS(Blueprintable)
-class AI_CORE_API Abase_controller_mobs : public AAIController
+class AI_CORE_API Abase_controller_mobs : public AAIController, public ICrowdAgentInterface
 {
 	GENERATED_BODY()
 
@@ -39,9 +40,9 @@ class AI_CORE_API Abase_controller_mobs : public AAIController
 	UPROPERTY(EditAnywhere, Category="Behavior", meta=(AllowPrivateAccess = "true"))
 	UBehaviorTreeComponent* BTC;
 	
-	UPROPERTY(EditAnywhere, Category="Behavior", meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, Category="Behavior", meta=(AllowPrivateAccess = "true"))
 	UBlackboardComponent* BBC;
-	
+
 public:	
 
 	explicit Abase_controller_mobs(const FObjectInitializer& ObjectInitializer);
@@ -79,8 +80,6 @@ private:
 
 	UPROPERTY()
 	Amob_base* pBase_Mob;
-	UPROPERTY()
-	AActor* TargetActor;
 	
 	uint8 TeamID;
 	FVector ReceiveLocation;

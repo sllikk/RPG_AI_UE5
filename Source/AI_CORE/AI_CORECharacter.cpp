@@ -54,6 +54,7 @@ AAI_CORECharacter::AAI_CORECharacter()
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
 
+	TeamId = FGenericTeamId(5);
 }
 
 void AAI_CORECharacter::PostInitializeComponents()
@@ -78,6 +79,12 @@ void AAI_CORECharacter::Tick(float DeltaSeconds)
 void AAI_CORECharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+}
+
+FGenericTeamId AAI_CORECharacter::GetGenericTeamId() const
+{
+	return TeamId;
 
 }
 

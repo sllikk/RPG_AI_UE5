@@ -2,19 +2,19 @@
 
 #include "AI_CORE/Public/EntityBrain//base_controller_mobs.h"
 
-#include <iostream>
-
+#include "BB_KEYS/bb_mobs_key.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Perception/AIPerceptionComponent.h"
+#include "Navigation/CrowdFollowingComponent.h"
 #include "Perception/AISenseConfig_Team.h"
 #include "Perception/AISenseConfig_Hearing.h"
 #include "Perception/AISenseConfig_Damage.h"
 #include "Perception/AISenseConfig_Sight.h"
 
 Abase_controller_mobs::Abase_controller_mobs(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer.Get()), pConfig_Sight(nullptr), pConfig_Damage(nullptr), pConfig_Team(nullptr),
-	  pBase_Mob(nullptr), TargetActor(nullptr) ,TeamID(0), ReceiveLocation(FVector::ZeroVector), flradius_sight(1000), flradius_hearing(500)
+	: Super(ObjectInitializer.SetDefaultSubobjectClass<UCrowdFollowingComponent>(TEXT("PathFollowingComponent"))), pConfig_Sight(nullptr), pConfig_Damage(nullptr), pConfig_Team(nullptr),
+	  pBase_Mob(nullptr), TeamID(0), ReceiveLocation(FVector::ZeroVector), flradius_sight(1000), flradius_hearing(500)
 {
 	SetPerceptionComponent(*ObjectInitializer.CreateDefaultSubobject<UAIPerceptionComponent>(this, TEXT("MOBS_PERCEPTION")));
 
@@ -29,10 +29,10 @@ Abase_controller_mobs::Abase_controller_mobs(const FObjectInitializer& ObjectIni
 	pConfig_Sight->SightRadius = flradius_sight;
 	pConfig_Sight->LoseSightRadius = flradius_sight + 155.0f;
 	pConfig_Sight->PeripheralVisionAngleDegrees = 90.0f;
-	pConfig_Sight->DetectionByAffiliation.bDetectFriendlies = true;
+	pConfig_Sight->DetectionByAffiliation.bDetectFriendlies = false;
 	pConfig_Sight->DetectionByAffiliation.bDetectEnemies = true;
 	pConfig_Sight->DetectionByAffiliation.bDetectNeutrals = true;
-	pConfig_Sight->SetMaxAge(10.0f);
+	pConfig_Sight->SetMaxAge(6.0f);
 
 	pConfig_Hearing->HearingRange = flradius_hearing;
 	pConfig_Hearing->DetectionByAffiliation.bDetectFriendlies = false;
@@ -59,6 +59,16 @@ void Abase_controller_mobs::BeginPlay()
 	Super::BeginPlay();
 
 	UAIPerceptionSystem::GetCurrent(GetWorld())->UpdateListener(*GetPerceptionComponent());
+
+	UCrowdFollowingComponent* CrowdFollowingComponent = FindComponentByClass<UCrowdFollowingComponent>();
+	if (CrowdFollowingComponent->IsValidLowLevel())
+	{
+		CrowdFollowingComponent->SetCrowdSeparation(true);
+		CrowdFollowingComponent->SetCrowdSeparationWeight(50.0f);
+		CrowdFollowingComponent->SetCrowdAvoidanceQuality(ECrowdAvoidanceQuality::Medium);
+	}
+	
+	
 }
 
 void Abase_controller_mobs::OnPossess(APawn* InPawn)
@@ -71,19 +81,14 @@ void Abase_controller_mobs::OnPossess(APawn* InPawn)
 		check(PerceptionComponent != nullptr)
 		PerceptionComponent->OnPerceptionUpdated.AddDynamic(this, &Abase_controller_mobs::UpdatePerception);
 
-		if (pBase_Mob->GetBehaviorTree().IsPending())
+		if (pBase_Mob->GetBehaviorTree()->IsValidLowLevel() && BBC != nullptr)
 		{
-			UBehaviorTree* BehaviorTree = pBase_Mob->GetBehaviorTree().LoadSynchronous();
-			if (BehaviorTree != nullptr)
-			{
-				BTC->StartTree(*BehaviorTree);
-				BBC->InitializeBlackboard(*BehaviorTree->BlackboardAsset);
-			}
+			BTC->StartTree(*pBase_Mob->GetBehaviorTree());
+			BBC->InitializeBlackboard(*pBase_Mob->GetBehaviorTree()->BlackboardAsset);
 		}
-		
 	}
-	
 }
+
 
 ETeamAttitude::Type Abase_controller_mobs::GetTeamAttitudeTowards(const AActor& Other) const
 {
@@ -119,6 +124,29 @@ void Abase_controller_mobs::UpdatePerception(const TArray<AActor*>& UpdateActors
 	{
 		FAIStimulus ActorStimulus;
 
+			
+#if UE_BUILD_DEBUG || UE_BUILD_DEVELOPMENT
+		ETeamAttitude::Type TeamAttitude = GetTeamAttitudeTowards(*TargetActors);	
+		FString strDebug;
+
+		switch (TeamAttitude)
+		{
+		case ETeamAttitude::Hostile:  
+			strDebug = TEXT("Hostile");
+			break;	
+		case ETeamAttitude::Friendly:	
+			strDebug = TEXT("Friendly");
+			break;
+		case ETeamAttitude::Neutral:	
+			strDebug = TEXT("Neutral");
+			break;
+		default:
+			break;
+		}
+		UE_LOG(LogAIPerception, Warning, TEXT("STIMULUS: %s, TEAM: %s"), *TargetActors->GetName(), *strDebug);
+#endif
+
+		
 		if (CanSenseActors(TargetActors, ESenseConfig::SIGHT, ActorStimulus))
 		{
 			UE_LOG(LogAIPerception, Warning, TEXT("SIGHT"))
@@ -142,29 +170,7 @@ void Abase_controller_mobs::UpdatePerception(const TArray<AActor*>& UpdateActors
 			HandleDamageActors(TargetActors);
 		}
 	}
-/*
-	
-#if UE_BUILD_DEBUG || UE_BUILD_DEVELOPMENT
-		ETeamAttitude::Type TeamAttitude = GetTeamAttitudeTowards(*OtherActors);	
-		FString strDebug;
 
-		switch (TeamAttitude)
-		{
-		case ETeamAttitude::Hostile:  
-			strDebug = TEXT("Hostile");
-			break;	
-		case ETeamAttitude::Friendly:	
-			strDebug = TEXT("Friendly");
-			break;
-		case ETeamAttitude::Neutral:	
-			strDebug = TEXT("Neutral");
-			break;
-		default:
-			break;
-		}
-		UE_LOG(LogAIPerception, Warning, TEXT("STIMULUS: %s, TEAM: %s"), *OtherActors->GetName(), *strDebug);
-#endif
-*/
 }
 
 bool Abase_controller_mobs::CanSenseActors(AActor* SenseActor, ESenseConfig SenseConfig, FAIStimulus& Stimulus)
@@ -224,17 +230,21 @@ bool Abase_controller_mobs::CanSenseActors(AActor* SenseActor, ESenseConfig Sens
 
 void Abase_controller_mobs::HandleSightActors(AActor* OtherActor)
 {
-
+	ETeamAttitude::Type TeamAttitude = GetTeamAttitudeTowards(*OtherActor);
+	if (TeamAttitude == ETeamAttitude::Hostile)
+	{
+		BBC->SetValueAsObject(bbkeys_mobs_base::strtarget_actor, OtherActor);
+	}
 }
 
 void Abase_controller_mobs::HandleSightLostActors(AActor* OtherActor)
 {
-
+	BBC->ClearValue(bbkeys_mobs_base::strtarget_actor);
 }
 
 void Abase_controller_mobs::HandleDamageActors(AActor* OtherActor)
 {
-
+	
 }
 
 void Abase_controller_mobs::HandleHearingLocations(const FVector& vecHearingLocation)
@@ -244,5 +254,5 @@ void Abase_controller_mobs::HandleHearingLocations(const FVector& vecHearingLoca
 
 void Abase_controller_mobs::HandleTeamActors(AActor* OtherActor)
 {
-
+	
 }

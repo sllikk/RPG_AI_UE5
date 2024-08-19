@@ -4,7 +4,10 @@
 #include "AI_CORE/Public/Entity/mob_base.h"
 
 #include "NavigationInvokerComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/WidgetComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Navigation/CrowdManager.h"
 #include "Perception/AIPerceptionStimuliSourceComponent.h"
 #include "Perception/AISense_Damage.h"
 #include "Perception/AISense_Hearing.h"
@@ -42,7 +45,12 @@ void Amob_base::PostInitializeComponents()
 void Amob_base::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	UCrowdManager* CrowdManager = UCrowdManager::GetCurrent(this);
+	if(CrowdManager != nullptr)
+	{
+		CrowdManager->RegisterAgent(this);
+	}
 }
 
 // Called every frame
@@ -56,6 +64,43 @@ float Amob_base::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
 	AActor* DamageCauser)
 {
 	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+}
+
+//-------------------------------ICrowdAgentInterface-----------------------------------------------------------------------------------//
+FVector Amob_base::GetCrowdAgentLocation() const
+{
+	return  GetActorLocation();
+}
+
+FVector Amob_base::GetCrowdAgentVelocity() const
+{
+	return GetCharacterMovement()->GetVelocityForRVOConsideration();
+}
+
+void Amob_base::GetCrowdAgentCollisions(float& CylinderRadius, float& CylinderHalfHeight) const
+{
+	CylinderRadius = GetCapsuleComponent()->GetScaledCapsuleRadius();
+	CylinderHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+}
+
+float Amob_base::GetCrowdAgentMaxSpeed() const
+{
+	return GetCharacterMovement()->GetMaxSpeed();
+}
+
+int32 Amob_base::GetCrowdAgentAvoidanceGroup() const
+{
+	return ICrowdAgentInterface::GetCrowdAgentAvoidanceGroup();
+}
+
+int32 Amob_base::GetCrowdAgentGroupsToAvoid() const
+{
+	return 1;
+}
+
+int32 Amob_base::GetCrowdAgentGroupsToIgnore() const
+{
+	return ICrowdAgentInterface::GetCrowdAgentGroupsToIgnore();
 }
 
 

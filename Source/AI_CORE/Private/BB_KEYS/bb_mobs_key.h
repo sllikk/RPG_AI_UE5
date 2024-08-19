@@ -6,10 +6,10 @@
 // this keys using for blackboard base mobs 
 namespace bbkeys_mobs_base
 {
-	FORCEINLINE TCHAR const* const strtarget_actor = TEXT("TargetActor");	
-	FORCEINLINE TCHAR const* const strnoise_location = TEXT("NoiseLocation");	
-	FORCEINLINE TCHAR const* const strdamage_location = TEXT("DamageLocation");	
-	FORCEINLINE TCHAR const* const strpatrol_location = TEXT("PatrolLocation");	
+	TCHAR const* const strtarget_actor = TEXT("TargetActor");	
+	TCHAR const* const strnoise_location = TEXT("NoiseLocation");	
+	TCHAR const* const strdamage_location = TEXT("DamageLocation");	
+	TCHAR const* const strpatrol_location = TEXT("PatrolLocation");	
 }
 
 

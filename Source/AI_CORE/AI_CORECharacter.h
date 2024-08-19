@@ -14,7 +14,7 @@ class UNavigationInvokerComponent;
 class UAIPerceptionStimuliSourceComponent;
 
 UCLASS(Blueprintable)
-class AAI_CORECharacter : public ACharacter
+class AAI_CORECharacter : public ACharacter, public IGenericTeamAgentInterface
 {
 	GENERATED_BODY()
 
@@ -29,7 +29,7 @@ class AAI_CORECharacter : public ACharacter
 
 	UPROPERTY(EditAnywhere, Category="AI", meta=(AllowPrivateAccess = "true"))
 	UAIPerceptionStimuliSourceComponent* pPerceptionStimuliSourceComponent;
-	
+
 public:
 
 	AAI_CORECharacter();
@@ -45,11 +45,13 @@ public:
 
 	UCameraComponent* GetTopDownCameraComponent() const;
 	USpringArmComponent* GetCameraBoom() const;
-	
-	
+
+	virtual FGenericTeamId GetGenericTeamId() const override;
+		
 private:
 
-	
+	FGenericTeamId TeamId;
+
 };
 
 

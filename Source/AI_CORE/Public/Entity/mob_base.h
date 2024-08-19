@@ -3,7 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BehaviorTree/BehaviorTree.h"
 #include "GameFramework/Character.h"
+#include "Navigation/CrowdAgentInterface.h"
 #include "mob_base.generated.h"
 
 class UNavigationInvokerComponent;
@@ -12,7 +14,7 @@ class UAIPerceptionStimuliSourceComponent;
 class UBehaviorTree;
 
 UCLASS(Blueprintable)
-class AI_CORE_API Amob_base : public ACharacter
+class AI_CORE_API Amob_base : public ACharacter, public ICrowdAgentInterface
 {
 	GENERATED_BODY()
 
@@ -26,7 +28,7 @@ class AI_CORE_API Amob_base : public ACharacter
 	UWidgetComponent* pWidgetComponent;
 
 	UPROPERTY(EditAnywhere, Category="AI", meta=(AllowPrivateAccess = "true"))
-	TSoftObjectPtr<UBehaviorTree> psoftBehaviorTree;
+	UBehaviorTree* pBehaviorTree;
 	
 public:
 	// Sets default values for this character's properties
@@ -39,9 +41,17 @@ protected:
 	virtual void Tick(float DeltaTime) override;
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;	
 
+	FORCEINLINE virtual FVector GetCrowdAgentLocation() const override;
+	FORCEINLINE virtual FVector GetCrowdAgentVelocity() const override;
+	FORCEINLINE virtual void GetCrowdAgentCollisions(float& CylinderRadius, float& CylinderHalfHeight) const override;
+	FORCEINLINE virtual float GetCrowdAgentMaxSpeed() const override;
+	FORCEINLINE virtual int32 GetCrowdAgentAvoidanceGroup() const override;
+ 	FORCEINLINE virtual int32 GetCrowdAgentGroupsToAvoid() const override;
+	FORCEINLINE virtual int32 GetCrowdAgentGroupsToIgnore() const override;	
+	
 public:	
 
-	TSoftObjectPtr<UBehaviorTree> GetBehaviorTree() const;
+	UBehaviorTree* GetBehaviorTree() const;
 	UWidgetComponent* GetWidgetMobs() const;
 
 	float GetHealth() const;
@@ -57,9 +67,9 @@ private:
 };
 
 
-FORCEINLINE TSoftObjectPtr<UBehaviorTree> Amob_base::GetBehaviorTree() const
+FORCEINLINE UBehaviorTree* Amob_base::GetBehaviorTree() const
 {
-	return psoftBehaviorTree;	 
+	return pBehaviorTree;	 
 }
 
 FORCEINLINE UWidgetComponent* Amob_base::GetWidgetMobs() const
